@@ -1,0 +1,34 @@
+
+main_tasks [
+    'Crop type' {
+        * 'Corn': keypress c -> 1
+        * 'soybean': keypress s -> 2
+        * 'wheat': keypress w -> 3
+        * 'barley': keypress b -> 4
+        * 'pasture': keypress p -> 5
+        * 'fallow': keypress f -> 6
+        * 'unknown': keypress u -> 7
+        * 'none': keypress n -> 8
+    } -> crop_type
+
+    'Field status' {
+        * 'emergence':                 keypress e -> 1
+        * 'fully grown':               keypress f -> 1
+        * 'fully grown & blooming':    keypress b -> 1
+        * 'senescing':                 keypress s -> 1
+        * 'fully senesced':            keypress d -> 1
+        * 'harvested/residue present': keypress h -> 1
+        * 'plowed/bare soil':          keypress p -> 1
+        * 'unknown':                   keypress u -> 1
+    } -> field_status
+    
+    'Snow present?' {
+        * 'yes': keypress y -> 1
+        * 'no':  keypress n -> 0
+    } -> snow_present
+    
+    'Field flooded?' {
+        * 'yes': keypress y -> 1
+        * 'no':  keypress n -> 0
+    } -> field_flooded
+]

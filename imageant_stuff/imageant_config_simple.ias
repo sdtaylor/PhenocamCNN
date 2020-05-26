@@ -1,0 +1,73 @@
+
+main_tasks:
+    - text: 'Field type'
+      variable: crop_type
+      responses:
+        - text : 'planted crop'
+          action: keypress{d ~ 1}
+          jump-to: crop_field_status
+        - text : 'pasture'
+          action: keypress{e ~ 2}
+          jump-to: pasture_field_status
+        - text : 'fallow cropland'
+          action: keypress{f ~ 3}
+          jump-to: pasture_field_status
+        - text : 'none (ie. harvested, plowed, and/or bare field)'
+          action: keypress{n ~ 4}
+          jump-to: crop_field_status
+
+    - text: 'Snow present?'
+      variable: snow_present
+      responses:
+        - text : 'Yes'
+          action: keypress{y ~ 1}
+        - text : 'No'
+          action: keypress{n ~ 0}
+          
+    - text: 'Field flooded?'
+      variable: field_flooded
+      responses:
+        - text : 'Yes'
+          action: keypress{y ~ 1}
+        - text : 'No'
+          action: keypress{n ~ 0}
+
+crop_field_status:
+    - text: 'Crop status'
+      variable: field_status_crop
+      responses:
+        - text : 'emergence'
+          action: keypress{a ~ 1}
+        - text : 'Growth stage'
+          action: keypress{b ~ 2}
+        - text : 'tassles/flowering'
+          action: keypress{c ~ 3}
+        - text : 'senescing/browning (10% or more of visable plants are brown/browning)'
+          action: keypress{d ~ 4}
+        - text : 'fully senesced (90% or more of visable plants are brown/browning)'
+          action: keypress{e ~ 5}
+        - text : 'harvested/residue present'
+          action: keypress{f ~ 6}
+        - text : 'plowed/bare soil'
+          action: keypress{g ~ 7}
+        - text : 'unknown (field covered in snow/water. blurry photo, etc)'
+          action: keypress{u ~ 8}
+
+pasture_field_status:
+    - text: 'Pasture/Fallow field status'
+      variable: field_status_pasture
+      responses:
+        - text : 'Low growth and or plants emerging'
+          action: keypress{a ~ 9}
+        - text : 'Mostly Senesced / Brown (50-90% of visable plants brown)'
+          action: keypress{b ~ 10}
+        - text : 'Mostly Green (50-90% of visable plants green)'
+          action: keypress{c ~ 11}
+        - text : 'Fully Senesced / Brown (90% or more of visable plants brown)'
+          action: keypress{d ~ 12}
+        - text : 'Peak Greenness (90% or more of visable plants green)'
+          action: keypress{e ~ 13}
+        - text : 'Mowed and/or heavily grazed'
+          action: keypress{f ~ 14}
+        - text : 'unknown (field covered in snow/water. blurry photo, etc)'
+          action: keypress{u ~ 15}
