@@ -29,7 +29,14 @@ weights = {0:0 , 1:0.34, 2:0.98219, 3:0, 4:0.975}
 target_size = (32,32)
 batch_size  = 32
 train_generator = ImageDataGenerator(vertical_flip = True,
-                                     rotation_range = 45).flow_from_dataframe(
+                                     horizontal_flip = True,
+                                     rotation_range = 45,
+                                     zoom_range = 0.25,
+                                     width_shift_range = [-0.25,0,0.25],
+                                     height_shift_range = [-0.25,0,0.25],
+                                     shear_range = 45,
+                                     brightness_range = [0.2,1],
+                                     fill_mode='reflect').flow_from_dataframe(
                                          train_images, 
                                          directory = 'data/phenocam_images/',
                                          target_size = target_size,
