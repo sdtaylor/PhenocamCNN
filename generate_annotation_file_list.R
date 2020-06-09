@@ -56,10 +56,17 @@ for(full_file_path in all_gcc_files){
     bind_rows(site_transition)
 }
 
-# for each site, pick 20 random images from each period type
+# Get rid of most pastures
+pasture_cameras = c("archboldavir","archboldavirx","archboldbahia","archboldpnot","archboldpnotx",'tworfpr',"harvardfarmnorth","harvardfarmsouth","harvardgarden",
+                   'rosemountnprs','sweetbriargrass','meadpasture','NEON.D04.LAJA.DP1.00033','wolfesneckfarm')
+
+all_site_periods = all_site_periods %>%
+  filter(!phenocam_name %in% pasture_cameras)
+
+# for each site, pick 50 random images from each period type
 images_for_download = all_site_periods %>%
   filter(!is.na(image_filename)) %>%
   group_by(phenocam_name, period) %>%
-  sample_n(min(n(),3))
+  sample_n(min(n(),50))
 
 write_csv(images_for_download, 'images_for_download.csv')

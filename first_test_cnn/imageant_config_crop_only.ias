@@ -1,0 +1,22 @@
+main_tasks:
+    - text: 'Crop status'
+      variable: field_status_crop
+      responses:
+        - text : 'emergence'
+          action: keypress{1 ~ 0}
+        - text : 'Growth stage'
+          action: keypress{2 ~ 1}
+        - text : 'tassles/flowering'
+          action: keypress{3 ~ 2}
+        - text : 'senescing/browning (10% or more of visable plants are brown/browning)'
+          action: keypress{4 ~ 3}
+        - text : 'fully senesced (90% or more of visable plants are brown/browning)'
+          action: keypress{5 ~ 4}
+        - text : 'harvested/plowed'
+          action: keypress{6 ~ 5}
+        - text : 'snow covered (>50%)'
+          action: keypress{8 ~ 6}
+        - text : 'water covered (>50%)'
+          action: keypress{9 ~ 7}
+        - text : 'unknown (blurry, water/snow covering lense)'
+          action: keypress{0 ~ 8}
