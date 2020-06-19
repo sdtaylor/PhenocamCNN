@@ -29,7 +29,7 @@ for name_i, n in enumerate(class_names):
 # Setup validation split
 validation_images = image_info.sample(frac=0.2)
 train_images      = image_info[~image_info.index.isin(validation_images.index)]
-train_images = train_images.sample(n=500, replace=True)
+#train_images = train_images.sample(n=500, replace=True)
 
 
 # n_classes = len(image_info.field_status_crop.unique())
@@ -38,9 +38,10 @@ train_images = train_images.sample(n=500, replace=True)
 
 
 image_dir = 'data/phenocam_images'
-target_size = (48,48)
-batch_size  = 32 # this batch size is just for extracting features
-train_generator = ImageDataGenerator(vertical_flip = True,
+target_size = (224,224)
+batch_size  = 32
+train_generator = ImageDataGenerator(preprocessing_function=keras.applications.vgg16.preprocess_input,
+                                     vertical_flip = True,
                                      horizontal_flip = True,
                                      rotation_range = 45,
                                      #zoom_range = 0.25,
@@ -60,7 +61,7 @@ train_generator = ImageDataGenerator(vertical_flip = True,
                                          )
 
 # No random transformations for test images                                        
-validation_generator  = ImageDataGenerator().flow_from_dataframe(
+validation_generator  = ImageDataGenerator(preprocessing_function=keras.applications.vgg16.preprocess_input).flow_from_dataframe(
                                          validation_images, 
                                          directory = image_dir,
                                          target_size = target_size,
@@ -73,7 +74,7 @@ validation_generator  = ImageDataGenerator().flow_from_dataframe(
 # Example from https://riptutorial.com/keras/example/32608/transfer-learning-using-keras-and-vgg
 base_model = keras.applications.VGG16(
     weights="imagenet",  # Load weights pre-trained on ImageNet.
-    input_shape=(48, 48, 3),
+    input_shape=(224, 224, 3),
     include_top=False,
 )  # Do not include the ImageNet classifier at the top.
 
@@ -85,9 +86,9 @@ original_weights = base_model.get_weights()
 
 x = base_model.output
 x = keras.layers.GlobalAveragePooling2D()(x)
-x = keras.layers.Dense(32, activation = 'relu')(x)
+x = keras.layers.Dense(512, activation = 'relu')(x)
 x = keras.layers.Dropout(0.5)(x)
-x = keras.layers.Dense(32, activation = 'relu')(x)
+x = keras.layers.Dense(512, activation = 'relu')(x)
 x = keras.layers.Dropout(0.5)(x)
 x = keras.layers.Dense(9,  activation = 'softmax')(x)
 
@@ -95,7 +96,9 @@ model = keras.Model(base_model.input, x)
 
 model.compile(optimizer = keras.optimizers.Adam(lr=0.001),
               loss='categorical_crossentropy',metrics=[keras.metrics.CategoricalAccuracy()])
+print(model.summary())
+
 model.fit(train_generator,
           validation_data= validation_generator,
           #class_weight = weights,
-          epochs=5)
+          epochs=100)
