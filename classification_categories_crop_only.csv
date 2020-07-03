@@ -1,0 +1,10 @@
+class_id,class_description
+0,emergence
+1,growth state
+2,tassles/flowering
+3,senescing
+4,fully senesced
+5,harvested/plowed
+6,snow
+7,flooded
+8,unknown
