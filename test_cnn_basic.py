@@ -78,6 +78,7 @@ validation_generator  = ImageDataGenerator(preprocessing_function=scale_images).
                                          directory = image_dir,
                                          target_size = target_size,
                                          batch_size = batch_size,
+                                         shuffle = False,
                                          x_col = 'file',
                                          y_col = class_names,
                                          class_mode = 'raw'
