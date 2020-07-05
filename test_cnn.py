@@ -3,8 +3,6 @@ from glob import glob
 import pandas as pd
 import numpy as np
 
-from skimage.io import imread
-from cv2 import resize
 import matplotlib.pyplot as plt
 
 from tensorflow import keras
@@ -12,60 +10,94 @@ from tensorflow.keras.layers import Dense, Input, Dropout, Flatten
 from keras_preprocessing.image import ImageDataGenerator
 from keras.utils import to_categorical
 
+from sklearn.utils.class_weight import compute_sample_weight
+
 from vgg16_places_365 import VGG16_Places365
 
 
-image_info = pd.read_csv('first_test_cnn/image_classifications.csv')
-validation_images = image_info.sample(frac=0.2)
+image_dir = './data/phenocam_images/'
+target_size = (224,224)
+validation_fraction = 0.2
+train_sample_size = 2500
+extract_batch_size  = 1000 # this batch size is just for extracting features
+
+fit_batch_size = 10
+fit_epoch_size = 500
+
+assert fit_epoch_size % fit_batch_size == 0
+
+image_info = pd.read_csv('first_test_cnn/crop_only.csv')
+
+# Setup one hot encoded class columns in the dataframe 
+class_names = image_info.field_status_crop.unique()
+class_names.sort()
+class_names = ['class_'+str(c) for c in class_names]
+
+one_hot_encoded = to_categorical(image_info.field_status_crop.values)
+
+for name_i, n in enumerate(class_names):
+    image_info[n] = one_hot_encoded[:,name_i]
+
+# train/validation split
+validation_images = image_info.sample(frac=validation_fraction)
 train_images      = image_info[~image_info.index.isin(validation_images.index)]
-train_images = train_images.sample(n=1000, replace=True)
+train_images['sample_weight'] = compute_sample_weight('balanced', train_images.field_status_crop)
+train_images = train_images.sample(n=train_sample_size, replace=True, weights='sample_weight')
 
 
-n_classes = len(image_info.crop_type.unique())
-class_counts = image_info.groupby('crop_type').size().reset_index(name='counts')
-weights = {0:0 , 1:0.34, 2:0.98219, 3:0, 4:0.975}
+def scale_images(x):
+    x /= 127.5
+    x -= 1
+    return x
 
-
-target_size = (32,32)
-batch_size  = 32
-train_generator = ImageDataGenerator(vertical_flip = True,
+train_generator = ImageDataGenerator(preprocessing_function=scale_images,
+                                     vertical_flip = True,
                                      horizontal_flip = True,
                                      rotation_range = 45,
-                                     zoom_range = 0.25,
+                                     #zoom_range = 0.25,
                                      width_shift_range = [-0.25,0,0.25],
                                      height_shift_range = [-0.25,0,0.25],
                                      shear_range = 45,
-                                     brightness_range = [0.2,1],
+                                     #brightness_range = [0.2,1],
                                      fill_mode='reflect').flow_from_dataframe(
                                          train_images, 
-                                         directory = 'data/phenocam_images/',
+                                         directory = image_dir,
                                          target_size = target_size,
-                                         batch_size = batch_size,
+                                         batch_size = extract_batch_size,
+                                         shuffle = False,
                                          x_col = 'file',
-                                         y_col = 'crop_type',
+                                         y_col = class_names,
                                          class_mode = 'raw'
                                          )
 
 # No random transformations for test images                                        
-validation_generator  = ImageDataGenerator().flow_from_dataframe(
+validation_generator  = ImageDataGenerator(preprocessing_function=scale_images).flow_from_dataframe(
                                          validation_images, 
-                                         directory = 'data/phenocam_images/',
+                                         directory = image_dir,
                                          target_size = target_size,
-                                         batch_size = batch_size,
+                                         batch_size = extract_batch_size,
+                                         shuffle = False,
                                          x_col = 'file',
-                                         y_col = 'crop_type',
+                                         y_col = class_names,
                                          class_mode = 'raw'
                                          )
 
-base_vgg_model = VGG16_Places365(weights='places', include_top = False)
+#base_vgg_model = VGG16_Places365(weights='places', include_top = False)
+base_vgg_model = keras.applications.VGG16(
+    weights="imagenet",  # Load weights pre-trained on ImageNet.
+    input_shape=(224, 224, 3),
+    include_top=False,
+) 
+
+
 # hmm, potentially just do this process a bunch of times
 # since the generator randomizes order and transformations.
 # or just use the  keras.fit(class_weights) arge with this eq https://scikit-learn.org/stable/modules/generated/sklearn.utils.class_weight.compute_class_weight.html
 train_features = base_vgg_model.predict_generator(train_generator)
-train_y = to_categorical(train_images.crop_type.values)
+train_y = train_images[class_names].values
 
 validation_features = base_vgg_model.predict_generator(validation_generator)
-validation_y = to_categorical(validation_images.crop_type.values)
+validation_y = validation_images[class_names].values
 
 class RandomImageGenerator(keras.utils.Sequence):
     def __init__(self, x_set, y_set, batch_size, epoch_size):
@@ -115,20 +147,24 @@ class RandomImageGenerator(keras.utils.Sequence):
         return (batch_x, batch_y)
         
 train_feature_generator = RandomImageGenerator(train_features, train_y, 
-                                               batch_size=25, epoch_size=100)
+                                               batch_size=fit_batch_size, epoch_size=fit_epoch_size)
 
 # Setup a classification model to use on the features output from VGG16_places
 # This is exactly the same as the top layer of VGG16, but with 5 classes instead of 365
 model = keras.Sequential()
-model.add(Flatten(name='flatten'))
-model.add(Dense(4096, activation='relu', name='fc1'))
+model.add(keras.layers.GlobalAveragePooling2D(name='flatten'))
+model.add(Dense(512, activation='relu', name='fc1'))
 model.add(Dropout(0.5, name='drop_fc1'))
-model.add(Dense(4096, activation='relu', name='fc2'))
+model.add(Dense(512, activation='relu', name='fc2'))
 model.add(Dropout(0.5, name='drop_fc2'))
-model.add(Dense(5, activation='softmax'))
+model.add(Dense(len(class_names), activation='softmax'))
+model.build(input_shape=base_vgg_model.output_shape)
 
-model.compile(optimizer='Adam',loss='categorical_crossentropy',metrics=['accuracy'])
+model.compile(optimizer = keras.optimizers.Adam(lr=0.001),
+              loss='categorical_crossentropy',metrics=[keras.metrics.CategoricalAccuracy()])
+print(model.summary())
+
 model.fit(train_feature_generator, 
           validation_data = (validation_features, validation_y),
-          class_weight = weights,
-          epochs=100)
+          #class_weight = weights,
+          epochs=200)
