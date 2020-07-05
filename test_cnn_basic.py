@@ -16,11 +16,11 @@ from sklearn.utils.class_weight import compute_sample_weight
 from vgg16_places_365 import VGG16_Places365
 
 
-image_dir = 'data/phenocam_images'
-train_sample_size = 5000
+image_dir = 'data/phenocam_images/'
+train_sample_size = 10000
 
 target_size = (224,224)
-batch_size  = 64
+batch_size  = 128
 
 image_info = pd.read_csv('first_test_cnn/crop_only.csv')
 
@@ -63,11 +63,11 @@ def load_imgs_from_df(df, x_col, img_dir, target_size, data_format='channels_las
     return img_array
     
 
-train_x = load_imgs_from_df(train_images, x_col='file', target_size=target_size, data_format='channels_last')
+train_x = load_imgs_from_df(train_images, x_col='file', img_dir=image_dir, target_size=target_size, data_format='channels_last')
 train_y = train_images[class_names].values
 
-val_x = load_imgs_from_df(validation_images, x_col='file', target_size=target_size, data_format='channels_last')
-val_y = train_images[class_names].values
+val_x = load_imgs_from_df(validation_images, x_col='file', img_dir=image_dir, target_size=target_size, data_format='channels_last')
+val_y = validation_images[class_names].values
 
 def scale_images(x):
     x /= 127.5
