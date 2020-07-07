@@ -1,4 +1,5 @@
 from glob import glob
+import re
 
 import pandas as pd
 import numpy as np
@@ -17,8 +18,9 @@ from vgg16_places_365 import VGG16_Places365
 
 
 image_dir = 'data/phenocam_images/'
-train_sample_size = 10000
+train_sample_size = 20000
 
+validation_fraction = 0.2
 target_size = (224,224)
 batch_size  = 128
 
@@ -39,8 +41,27 @@ for name_i, n in enumerate(class_names):
 
 ########################################
 # Setup validation split
-validation_images = image_info.sample(frac=0.2)
-train_images      = image_info[~image_info.index.isin(validation_images.index)]
+total_validation_images = int(len(image_info) * validation_fraction)
+
+# First put all images from held out sites into the validation set
+image_info['validation_site'] = image_info.file.apply(lambda f: bool(re.search(r'(arsmorris2)|(mandani2)|(cafboydnorthltar01)', f)))
+validation_images = image_info[image_info.validation_site]
+
+# Add in a random sample of remaining images to get to the total validation fraction
+# images from validation sites excluded here by setting weight to 0
+image_info['validation_weight'] = image_info.validation_site.apply(lambda val_site: 0 if val_site else 1)
+validation_images = validation_images.append(image_info.sample(n= total_validation_images - len(validation_images), replace=False, weights='validation_weight')) 
+
+# Training images are ones that are left
+train_images = image_info[~image_info.index.isin(validation_images.index)]
+
+# assure no validtion sites in the training data, and all images in each set are unique
+assert train_images.validation_site.sum() == 0, 'validation sites in training dataframe'
+assert train_images.index.nunique() == len(train_images), 'duplicates in training dataframe'
+assert validation_images.index.nunique() == len(validation_images), 'duplicates in validation dataframe'
+
+# expand training by random sampling, weighted so that low sample size category images are repeated.
+# This makes it so sample sizes are even in training
 train_images['sample_weight'] = compute_sample_weight('balanced', train_images.field_status_crop)
 train_images = train_images.sample(n=train_sample_size, replace=True, weights='sample_weight')
 
