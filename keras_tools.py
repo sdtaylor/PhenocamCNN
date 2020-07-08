@@ -49,7 +49,7 @@ def keras_predict(df, filename_col, model, target_size, preprocess_func,
                                          y_col = 'class'
                                          )
     
-    predictions = model.predict(g)
+    predictions = model.predict(g, workers=32, verbose=1)
     
     if predict_prob:
         return predictions
