@@ -6,15 +6,10 @@ import numpy as np
 
 from tensorflow import keras
 from tensorflow.keras.layers import Dense, Input, Dropout, Flatten
-from keras_preprocessing.image import (ImageDataGenerator,
-                                       load_img,
-                                       img_to_array,
-                                       )
+from keras_preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import to_categorical
 
 from sklearn.utils.class_weight import compute_sample_weight
-
-from vgg16_places_365 import VGG16_Places365
 
 
 image_dir = 'data/phenocam_images/'
@@ -66,22 +61,7 @@ train_images['sample_weight'] = compute_sample_weight('balanced', train_images.f
 train_images = train_images.sample(n=train_sample_size, replace=True, weights='sample_weight')
 
 
-# Load in images to numpy arrays
-def load_imgs_from_df(df, x_col, img_dir, target_size, data_format='channels_last'):
-    n_images = len(df)
-    img_array = np.zeros((n_images,) + target_size + (3,))
-    
-    for i,j in enumerate(df[x_col]):
-        img = load_img(img_dir + j,
-                       color_mode='rgb',
-                       target_size=target_size)
-        img_array[i] = img_to_array(img, data_format=data_format)
-        # Pillow images should be closed after `load_img`,
-        # but not PIL images.
-        if hasattr(img, 'close'):
-            img.close()
-    
-    return img_array
+
     
 
 train_x = load_imgs_from_df(train_images, x_col='file', img_dir=image_dir, target_size=target_size, data_format='channels_last')
