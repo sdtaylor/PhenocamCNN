@@ -11,9 +11,12 @@ from tensorflow.keras.utils import to_categorical
 
 from sklearn.utils.class_weight import compute_sample_weight
 
+from tools.image_tools import generate_random_crops
 
 image_dir = 'data/phenocam_images/'
 train_sample_size = 20000
+random_image_crops = 3
+crop_size = 400
 
 validation_fraction = 0.2
 target_size = (224,224)
@@ -60,15 +63,16 @@ assert validation_images.index.nunique() == len(validation_images), 'duplicates 
 train_images['sample_weight'] = compute_sample_weight('balanced', train_images.field_status_crop)
 train_images = train_images.sample(n=train_sample_size, replace=True, weights='sample_weight')
 
+# Generate numpy arrays of all images. Each image is repeated several times
+train_x, train_y, = generate_random_crops(df = train_images, x_col='file', y_col=class_names,
+                                          n_random_crops_per_image=random_image_crops, crop_dim = crop_size,
+                                          crop_height=0.5,
+                                          img_dir = image_dir, final_target_size=target_size, data_format='channels_last')
 
-
-    
-
-train_x = load_imgs_from_df(train_images, x_col='file', img_dir=image_dir, target_size=target_size, data_format='channels_last')
-train_y = train_images[class_names].values
-
-val_x = load_imgs_from_df(validation_images, x_col='file', img_dir=image_dir, target_size=target_size, data_format='channels_last')
-val_y = validation_images[class_names].values
+val_x, val_y, = generate_random_crops(df = validation_images, x_col='file', y_col=class_names,
+                                      n_random_crops_per_image=random_image_crops, crop_dim = crop_size,
+                                      crop_height=0.5,
+                                      img_dir = image_dir, final_target_size=target_size, data_format='channels_last')
 
 def scale_images(x):
     x /= 127.5
@@ -95,7 +99,7 @@ train_generator = ImageDataGenerator(preprocessing_function=scale_images,
 validation_generator  = ImageDataGenerator(preprocessing_function=scale_images).flow(
                                          x = val_x,
                                          y = val_y,
-                                         shuffle = True,
+                                         shuffle = False,
                                          batch_size = batch_size,
                                          )
 
