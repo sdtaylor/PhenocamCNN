@@ -14,13 +14,13 @@ from sklearn.utils.class_weight import compute_sample_weight
 from tools.image_tools import generate_random_crops
 
 image_dir = 'data/phenocam_images/'
-train_sample_size = 20000
-random_image_crops = 3
+train_sample_size = 10000
+random_image_crops = 5
 crop_size = 400
 
 validation_fraction = 0.2
 target_size = (224,224)
-batch_size  = 128
+batch_size  = 100
 
 image_info = pd.read_csv('first_test_cnn/crop_only.csv')
 
@@ -70,13 +70,13 @@ train_x, train_y, = generate_random_crops(df = train_images, x_col='file', y_col
                                           img_dir = image_dir, final_target_size=target_size, data_format='channels_last')
 
 val_x, val_y, = generate_random_crops(df = validation_images, x_col='file', y_col=class_names,
-                                      n_random_crops_per_image=random_image_crops, crop_dim = crop_size,
+                                      n_random_crops_per_image=3, crop_dim = crop_size,
                                       crop_height=0.5,
                                       img_dir = image_dir, final_target_size=target_size, data_format='channels_last')
 
 def scale_images(x):
-    x /= 127.5
-    x -= 1
+    x = x / 127.5
+    x = x - 1
     return x 
 
 train_generator = ImageDataGenerator(preprocessing_function=scale_images,
@@ -96,12 +96,13 @@ train_generator = ImageDataGenerator(preprocessing_function=scale_images,
                                          )
 
 # No random transformations for test images                                        
-validation_generator  = ImageDataGenerator(preprocessing_function=scale_images).flow(
-                                         x = val_x,
-                                         y = val_y,
-                                         shuffle = False,
-                                         batch_size = batch_size,
-                                         )
+val_x = scale_images(val_x)
+#validation_generator  = ImageDataGenerator(preprocessing_function=scale_images).flow(
+#                                         x = val_x,
+#                                         y = val_y,
+#                                         shuffle = False,
+#                                         batch_size = batch_size,
+#                                         )
 
 # Example from https://riptutorial.com/keras/example/32608/transfer-learning-using-keras-and-vgg
 #base_model = VGG16_Places365(
@@ -133,6 +134,8 @@ base_model.compile(optimizer = keras.optimizers.Adam(lr=0.0001),
 print(base_model.summary())
 
 base_model.fit(train_generator,
-          validation_data= validation_generator,
+          validation_data= (val_x,val_y),
           #class_weight = weights,
+          steps_per_epoch=len(train_generator), # fit() should be detecting this, but whatevs
+          #validation_freq = 2,
           epochs=30)
