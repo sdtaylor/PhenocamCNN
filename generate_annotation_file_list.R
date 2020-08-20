@@ -52,6 +52,35 @@ for(full_file_path in all_gcc_files){
   site_transition = site_transition %>%
     left_join(image_info, by='date')
   
+  
+  ########################
+  ########################
+  # Count the size of daily sequences which have an available image file 
+  # for all days. And label each sequence with a unique id
+  site_transition$running_tally = NA
+  site_transition$site_seq_id = NA
+  tally=0
+  seq_id=0
+  for(i in 1:nrow(site_transition)){
+    
+    current_row_present = !is.na(site_transition$image_filename[i])
+    if(current_row_present){
+      tally = tally + 1
+    } else {
+      tally = 0
+    }
+    
+    if(tally==1){
+      seq_id = seq_id+1
+      site_transition$site_seq_id[i] = seq_id
+    } else if(tally>1){
+      site_transition$site_seq_id[i] = seq_id
+    }
+    
+    site_transition$running_tally[i] = tally
+  }
+  
+  ######
   all_site_periods = all_site_periods %>%
     bind_rows(site_transition)
 }
@@ -63,10 +92,17 @@ pasture_cameras = c("archboldavir","archboldavirx","archboldbahia","archboldpnot
 all_site_periods = all_site_periods %>%
   filter(!phenocam_name %in% pasture_cameras)
 
-# for each site, pick 50 random images from each period type
+# For each site, choose all images within continguous sequences with sizes > 100
 images_for_download = all_site_periods %>%
-  filter(!is.na(image_filename)) %>%
-  group_by(phenocam_name, period) %>%
-  sample_n(min(n(),50))
+  group_by(phenocam_name, site_seq_id) %>%
+  mutate(total_sequence_n = max(running_tally)) %>%
+  ungroup() %>%
+  filter(total_sequence_n > 100) %>% View()
+
+# # for each site, pick 50 random images from each period type
+# images_for_download = all_site_periods %>%
+#   filter(!is.na(image_filename)) %>%
+#   group_by(phenocam_name, period) %>%
+#   sample_n(min(n(),50))
 
 write_csv(images_for_download, 'images_for_download.csv')
