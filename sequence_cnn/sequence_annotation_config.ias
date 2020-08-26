@@ -1,0 +1,41 @@
+main_tasks:
+    - text: 'Crop type'
+      variable: crop_type
+      responses:
+        - text : 'large leaf grain (corn/sorgham)'
+          action: keypress{a ~ 0}
+        - text : 'soybean'
+          action: keypress{b ~ 1}
+        - text : 'small leaf grain (wheat/barley)'
+          action: keypress{c ~ 2}
+        - text : 'other non-grain (includes cover crops)'
+          action: keypress{d ~ 3}
+        - text : 'fallow (volunteer plants everywhere)'
+          action: keypress{f ~ 4}
+        - text : 'unknown (a planted crop is present and growing but the exact plant cannot be inferred)'
+          action: keypress{u ~ 5}
+        - text : 'none (a harvested, plowed, and/or bare field)'
+          action: keypress{n ~ 6}
+
+    - text: 'Crop status'
+      variable: crop_status
+      responses:
+        - text : 'emergence'
+          action: keypress{1 ~ 0}
+        - text : 'Growth stage'
+          action: keypress{2 ~ 1}
+        - text : 'tassles/flowers/fruit present'
+          action: keypress{3 ~ 2}
+        - text : 'senescing/browning (10% or more of visable plants are brown/browning)'
+          action: keypress{4 ~ 3}
+        - text : 'fully senesced (90% or more of visable plants are brown/browning)'
+          action: keypress{5 ~ 4}
+        - text : 'harvested/plowed'
+          action: keypress{6 ~ 5}
+        - text : 'snow covered (>50%)'
+          action: keypress{7 ~ 6}
+        - text : 'water covered (>50%)'
+          action: keypress{8 ~ 7}
+        - text : 'unknown (blurry, water/snow covering lense)'
+          action: keypress{0 ~ 8}
+
