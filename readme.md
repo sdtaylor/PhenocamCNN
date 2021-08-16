@@ -1,4 +1,7 @@
 
+
+This repo is now at [https://github.com/sdtaylor/PhenocamCNN2/](https://github.com/sdtaylor/PhenocamCNN2/)
+
 ## File list
 Descriptions of scripts in the repo in the order they're  meant to be run
 1. generate_site_list.R - Download the latest phenocam metadata and choose appropriate sites, creating site_list.csv
